@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Body -->
+  <ellipse cx="50" cy="52" rx="25" ry="12" transform="rotate(-5,50,52)" fill="black"/>
+  <!-- Neck -->
+  <polygon points="66,42 74,25 82,28 74,46" fill="black"/>
+  <!-- Head -->
+  <ellipse cx="83" cy="22" rx="11" ry="7" transform="rotate(-20,83,22)" fill="black"/>
+  <!-- Muzzle -->
+  <ellipse cx="92" cy="28" rx="5" ry="3.5" transform="rotate(-15,92,28)" fill="black"/>
+  <!-- Ear -->
+  <polygon points="76,13 81,20 73,22" fill="black"/>
+  <!-- Mane -->
+  <path d="M74,24 C70,19 65,17 63,22 C67,17 72,21 76,27 Z" fill="black"/>
+  <!-- Tail -->
+  <path d="M26,47 C16,43 8,34 11,24 C9,28 13,40 23,45 Z" fill="black"/>
+  <!-- Front legs -->
+  <polygon points="64,62 70,62 79,88 73,88" fill="black"/>
+  <polygon points="56,64 62,64 69,88 63,88" fill="black"/>
+  <!-- Back legs -->
+  <polygon points="37,62 43,62 31,88 25,88" fill="black"/>
+  <polygon points="44,63 50,63 40,88 34,88" fill="black"/>
+</svg>

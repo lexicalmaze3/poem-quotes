@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #0d0c0b;
+  --surface: #131210;
+  --line:    #1e1c1a;
+  --faint:   #2e2b28;
+  --dim:     #5a5652;
+  --text:    #e8e3da;
+  --accent:  #c8845a;
+  --accent2: #8a5c3e;
+}
+
+body {
+  width: 420px;
+  height: 300px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── Root layout ── */
+.layout {
+  display: flex;
+  width: 420px;
+  height: 300px;
+  opacity: 0.38;
+  transition: opacity 0.4s ease;
+}
+.layout.active { opacity: 1; }
+
+#main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Sidebar ── */
+#sidebar {
+  width: 30px;
+  border-left: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 0;
+  gap: 7px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex-shrink: 0;
+}
+
+#sidebar::-webkit-scrollbar { display: none; }
+
+.pin {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: var(--accent);
+  opacity: 0.45;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.15s, transform 0.15s;
+  -webkit-app-region: no-drag;
+  pointer-events: all;
+  position: relative;
+}
+
+.pin:hover          { opacity: 0.9; transform: scale(1.2); }
+.pin.current        { opacity: 1; box-shadow: 0 0 0 1.5px var(--accent); }
+
+/* ── Titlebar ── */
+#titlebar {
+  -webkit-app-region: drag;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--line);
+  position: relative;
+  flex-shrink: 0;
+}
+
+#progress {
+  position: absolute;
+  bottom: 0; left: 0;
+  height: 1px;
+  width: 0%;
+  background: var(--accent);
+  opacity: 0.5;
+  transition: width linear;
+}
+
+#title-label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+#titlebar-btns {
+  -webkit-app-region: no-drag;
+  display: flex;
+  gap: 2px;
+}
+
+.tbtn {
+  background: none;
+  border: none;
+  color: var(--faint);
+  font-size: 14px;
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: color 0.15s, background 0.15s;
+  -webkit-app-region: no-drag;
+  pointer-events: all;
+}
+
+.tbtn:hover         { color: var(--text); background: var(--surface); }
+#btn-add.active     { color: var(--accent); }
+#btn-star.starred   { color: var(--accent); }
+#btn-quit:hover     { color: #d06060; background: rgba(200,80,80,0.1); }
+#btn-del:hover      { color: #d06060; background: rgba(200,80,80,0.1); }
+#btn-search.active  { color: var(--accent); }
+
+/* ── Search bar ── */
+#search-bar {
+  display: none;
+  align-items: center;
+  height: 34px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+
+#search-input {
+  width: 100%;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  -webkit-app-region: no-drag;
+  user-select: text;
+}
+
+#search-input::placeholder { color: var(--dim); }
+
+/* ── No results ── */
+#no-results {
+  display: none;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+
+#no-results p {
+  font-size: 12px;
+  color: var(--dim);
+  font-weight: 300;
+}
+
+/* ── Quote display ── */
+#quote-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 24px;
+  transition: opacity 0.2s ease;
+  min-height: 0;
+}
+
+#quote-area.fade { opacity: 0; }
+
+#qtext {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--text);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+}
+
+#qauthor {
+  margin-top: 12px;
+  font-size: 10px;
+  font-weight: 500;
+  font-style: italic;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  opacity: 0.75;
+}
+
+/* ── Empty state ── */
+#empty {
+  display: none;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 0;
+}
+
+#empty .eq {
+  font-family: 'Playfair Display', serif;
+  font-size: 52px;
+  line-height: 1;
+  color: var(--faint);
+}
+
+#empty p {
+  font-size: 12px;
+  color: var(--dim);
+  text-align: center;
+  line-height: 1.65;
+  font-weight: 300;
+}
+
+/* ── Add form ── */
+#add-form {
+  display: none;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px 10px;
+  min-height: 0;
+}
+
+#add-form textarea {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--faint);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 13px;
+  line-height: 1.65;
+  padding: 10px 12px;
+  resize: none;
+  outline: none;
+  -webkit-app-region: no-drag;
+  user-select: text;
+  transition: border-color 0.15s;
+}
+
+#add-form textarea:focus { border-color: var(--accent2); }
+#add-form textarea::placeholder { color: var(--faint); }
+
+#add-form input {
+  height: 32px;
+  background: var(--surface);
+  border: 1px solid var(--faint);
+  border-radius: 8px;
+  color: var(--accent);
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  padding: 0 12px;
+  outline: none;
+  -webkit-app-region: no-drag;
+  user-select: text;
+  transition: border-color 0.15s;
+}
+
+#add-form input:focus { border-color: var(--accent2); }
+#add-form input::placeholder { color: var(--accent2); opacity: 0.5; }
+
+/* ── Bottom bar ── */
+#bottom {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  border-top: 1px solid var(--line);
+  gap: 4px;
+  flex-shrink: 0;
+  -webkit-app-region: no-drag;
+}
+
+.nbtn {
+  background: none;
+  border: none;
+  color: var(--faint);
+  font-size: 18px;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s;
+  -webkit-app-region: no-drag;
+  pointer-events: all;
+}
+
+.nbtn:hover    { color: var(--text); background: var(--surface); }
+.nbtn:disabled { opacity: 0.2; cursor: default; background: none; }
+
+#dots {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+}
+
+.dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--faint);
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.dot.on { background: var(--accent); transform: scale(1.35); }
+
+.add-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  padding-bottom: 2px;
+}
+
+#btn-cancel {
+  flex: 1;
+  background: none;
+  border: 1px solid var(--faint);
+  border-radius: 6px;
+  color: var(--dim);
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  cursor: pointer;
+  padding: 6px 0;
+  transition: border-color 0.15s, color 0.15s;
+  -webkit-app-region: no-drag;
+  pointer-events: all;
+}
+
+#btn-cancel:hover { border-color: var(--dim); color: var(--text); }
+
+#btn-save {
+  flex: 2;
+  background: var(--accent);
+  color: #1a0e08;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  -webkit-app-region: no-drag;
+  pointer-events: all;
+}
+
+#btn-save:hover { opacity: 0.82; }
+
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <div id="main">
+
+    <div id="titlebar">
+      <div id="progress"></div>
+      <span id="title-label">Quotes</span>
+      <div id="titlebar-btns">
+        <button class="tbtn" id="btn-search" title="Search quotes">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="4.5" cy="4.5" r="3"/><line x1="7" y1="7" x2="10" y2="10"/></svg>
+        </button>
+        <button class="tbtn" id="btn-star" title="Pin quote">☆</button>
+        <button class="tbtn" id="btn-del" title="Delete quote">−</button>
+        <button class="tbtn" id="btn-add" title="Add quote">+</button>
+        <button class="tbtn" id="btn-quit" title="Quit">×</button>
+      </div>
+    </div>
+
+    <div id="search-bar">
+      <input id="search-input" type="text" placeholder="Search quotes…" spellcheck="false">
+    </div>
+
+    <div id="quote-area">
+      <div id="qtext"></div>
+      <div id="qauthor"></div>
+    </div>
+
+    <div id="empty">
+      <span class="eq">"</span>
+      <p>No quotes yet.<br>Hit + to add your first one.</p>
+    </div>
+
+    <div id="no-results">
+      <p>No quotes found.</p>
+    </div>
+
+    <div id="add-form">
+      <textarea id="ta" placeholder="Paste a quote…"></textarea>
+      <input id="inp-author" type="text" placeholder="(author or source)">
+      <div class="add-actions">
+        <button id="btn-cancel">Cancel</button>
+        <button id="btn-save">Save</button>
+      </div>
+    </div>
+
+    <div id="bottom">
+      <button class="nbtn" id="btn-prev">‹</button>
+      <div id="dots"></div>
+      <button class="nbtn" id="btn-next">›</button>
+    </div>
+
+  </div><!-- #main -->
+
+  <div id="sidebar"></div>
+
+</div><!-- .layout -->
+
+<script>
+  let quotes = [], idx = 0, adding = false;
+  let searching = false, searchQuery = '', searchIdx = 0;
+  let autoTimer = null;
+  const INTERVAL = 30000;
+
+  // ── Widget visibility state ──────────────────────────────────
+  let isHovered = false, inAddMode = false, inactivityTimer = null;
+  const INACTIVITY_MS = 5 * 60 * 1000;
+
+  const progress    = document.getElementById('progress');
+  const quoteArea   = document.getElementById('quote-area');
+  const qtext       = document.getElementById('qtext');
+  const qauthor     = document.getElementById('qauthor');
+  const emptyEl     = document.getElementById('empty');
+  const noResults   = document.getElementById('no-results');
+  const addForm     = document.getElementById('add-form');
+  const searchBar   = document.getElementById('search-bar');
+  const searchInput = document.getElementById('search-input');
+  const ta          = document.getElementById('ta');
+  const inpAuthor   = document.getElementById('inp-author');
+  const dotsEl      = document.getElementById('dots');
+  const btnPrev     = document.getElementById('btn-prev');
+  const btnNext     = document.getElementById('btn-next');
+  const btnAdd      = document.getElementById('btn-add');
+  const btnSave     = document.getElementById('btn-save');
+  const btnCancel   = document.getElementById('btn-cancel');
+  const btnStar     = document.getElementById('btn-star');
+  const btnDel      = document.getElementById('btn-del');
+  const btnSearch   = document.getElementById('btn-search');
+  const btnQuit     = document.getElementById('btn-quit');
+  const bottom      = document.getElementById('bottom');
+  const sidebar     = document.getElementById('sidebar');
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // Returns filtered array when there's an active query, null otherwise
+  function visibleList() {
+    if (!searching) return null;
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return null;
+    return quotes.filter(qt =>
+      qt.text.toLowerCase().includes(q) ||
+      (qt.author && qt.author.toLowerCase().includes(q))
+    );
+  }
+
+  // Resolves the currently displayed quote back to its index in quotes[]
+  function getGlobalIdx() {
+    if (!searching) return idx;
+    const view = visibleList();
+    if (!view || !view.length) return -1;
+    const vi = Math.min(searchIdx, view.length - 1);
+    return quotes.indexOf(view[vi]);
+  }
+
+  // ── Widget dim / inactivity ───────────────────────────────────
+  const layout = document.querySelector('.layout');
+
+  function activateWidget() {
+    isHovered = true;
+    layout.classList.add('active');
+    resetInactivity();
+  }
+
+  function dimWidget() {
+    if (inAddMode) return;
+    isHovered = false;
+    layout.classList.remove('active');
+    clearTimeout(inactivityTimer);
+  }
+
+  function resetInactivity() {
+    clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(() => { if (!inAddMode) dimWidget(); }, INACTIVITY_MS);
+  }
+
+  document.addEventListener('mousemove',  () => { if (!isHovered) activateWidget(); else resetInactivity(); });
+  document.addEventListener('mouseleave', () => dimWidget());
+  document.addEventListener('mousedown',  resetInactivity);
+  document.addEventListener('keydown',    resetInactivity);
+
+  // ── Auto-cycle ──────────────────────────────────────────────
+  function startAuto() {
+    stopAuto();
+    if (quotes.length < 2) return;
+    progress.style.transition = 'none';
+    progress.style.width = '0%';
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      progress.style.transition = `width ${INTERVAL}ms linear`;
+      progress.style.width = '100%';
+    }));
+    autoTimer = setTimeout(() => goTo((idx + 1) % quotes.length), INTERVAL);
+  }
+
+  function stopAuto() {
+    clearTimeout(autoTimer);
+    autoTimer = null;
+    progress.style.transition = 'none';
+    progress.style.width = '0%';
+  }
+
+  // ── Sidebar (pinned quotes) ──────────────────────────────────
+  function renderSidebar() {
+    sidebar.innerHTML = '';
+    quotes.forEach((q, i) => {
+      if (!q.pinned) return;
+      const pin = document.createElement('div');
+      pin.className = 'pin' + (i === idx ? ' current' : '');
+      const preview = (q.author ? `— ${q.author}\n` : '') + q.text.slice(0, 80) + (q.text.length > 80 ? '…' : '');
+      pin.title = preview;
+      pin.onclick = () => goTo(i);
+      sidebar.appendChild(pin);
+    });
+  }
+
+  // ── Main render ──────────────────────────────────────────────
+  function renderQuote() {
+    const view = visibleList();
+    const list = view !== null ? view : quotes;
+    const vi   = view !== null ? Math.min(searchIdx, Math.max(0, list.length - 1)) : idx;
+    const has  = list.length > 0;
+
+    searchBar.style.display  = searching ? 'flex' : 'none';
+    btnSearch.classList.toggle('active', searching);
+    quoteArea.style.display  = !adding && has ? 'flex' : 'none';
+    emptyEl.style.display    = !adding && !quotes.length ? 'flex' : 'none';
+    noResults.style.display  = searching && quotes.length > 0 && !has ? 'flex' : 'none';
+    addForm.style.display    = adding ? 'flex' : 'none';
+    bottom.style.display     = adding ? 'none' : 'flex';
+    btnStar.style.display    = adding ? 'none' : '';
+    btnDel.style.display     = adding || !has ? 'none' : '';
+    btnAdd.textContent       = adding ? '—' : '+';
+    btnAdd.classList.toggle('active', adding);
+
+    if (!adding && has) {
+      const q = list[vi];
+      qtext.innerHTML       = '“' + esc(q.text) + '”';
+      qauthor.textContent   = q.author ? `(${q.author})` : '';
+      qauthor.style.display = q.author ? '' : 'none';
+      btnPrev.disabled      = vi === 0;
+      btnNext.disabled      = vi === list.length - 1;
+      btnStar.textContent   = q.pinned ? '★' : '☆';
+      btnStar.classList.toggle('starred', !!q.pinned);
+    } else if (!has) {
+      btnStar.textContent = '☆';
+      btnStar.classList.remove('starred');
+    }
+
+    dotsEl.innerHTML = '';
+    if (!adding && list.length > 1) {
+      const max = Math.min(list.length, 7);
+      const off = Math.max(0, Math.min(vi - 3, list.length - max));
+      for (let i = 0; i < max; i++) {
+        const d = document.createElement('div');
+        d.className = 'dot' + (off + i === vi ? ' on' : '');
+        const t = off + i;
+        d.onclick = () => {
+          if (view !== null) { searchIdx = t; renderQuote(); }
+          else goTo(t);
+        };
+        dotsEl.appendChild(d);
+      }
+    }
+  }
+
+  // ── Navigation ───────────────────────────────────────────────
+  function goTo(i) {
+    quoteArea.classList.add('fade');
+    setTimeout(() => {
+      idx = i;
+      renderQuote();
+      renderSidebar();
+      quoteArea.classList.remove('fade');
+      startAuto();
+    }, 180);
+  }
+
+  // ── Search ───────────────────────────────────────────────────
+  function openSearch() {
+    stopAuto();
+    searching = true;
+    searchQuery = '';
+    searchIdx = 0;
+    renderQuote();
+    searchInput.focus();
+  }
+
+  function closeSearch() {
+    const view = visibleList();
+    if (view && view.length) {
+      const gi = quotes.indexOf(view[Math.min(searchIdx, view.length - 1)]);
+      if (gi >= 0) idx = gi;
+    }
+    searching = false;
+    searchQuery = '';
+    searchInput.value = '';
+    renderQuote();
+    renderSidebar();
+    startAuto();
+  }
+
+  // ── Add form ─────────────────────────────────────────────────
+  function startAdd() {
+    inAddMode = true;
+    layout.classList.add('active');
+    window.api.widgetAddMode();
+    if (searching) { searching = false; searchQuery = ''; searchInput.value = ''; }
+    stopAuto();
+    adding = true;
+    renderQuote();
+    ta.focus();
+  }
+
+  function cancelAdd() {
+    inAddMode = false;
+    window.api.widgetExitAddMode();
+    resetInactivity(); // stay visible, start the inactivity countdown
+    adding = false;
+    ta.value = '';
+    inpAuthor.value = '';
+    renderQuote();
+    renderSidebar();
+    startAuto();
+  }
+
+  function addQuote() {
+    const text = ta.value.trim();
+    if (!text) { ta.focus(); return; }
+    quotes.unshift({ id: Date.now().toString(36), text, author: inpAuthor.value.trim() });
+    idx = 0;
+    window.api.save(quotes);
+    cancelAdd();
+  }
+
+  // ── Delete quote ─────────────────────────────────────────────
+  function deleteQuote() {
+    const gi = getGlobalIdx();
+    if (gi < 0) return;
+    quotes.splice(gi, 1);
+    if (!searching) {
+      idx = Math.min(idx, Math.max(0, quotes.length - 1));
+      window.api.save(quotes);
+      renderQuote();
+      renderSidebar();
+      startAuto();
+    } else {
+      const newView = visibleList();
+      searchIdx = Math.min(searchIdx, Math.max(0, newView ? newView.length - 1 : 0));
+      window.api.save(quotes);
+      renderQuote();
+      renderSidebar();
+    }
+  }
+
+  // ── Pin toggle ───────────────────────────────────────────────
+  function togglePin() {
+    const gi = getGlobalIdx();
+    if (gi < 0) return;
+    quotes[gi].pinned = !quotes[gi].pinned;
+    window.api.save(quotes);
+    renderQuote();
+    renderSidebar();
+  }
+
+  // ── Event listeners ──────────────────────────────────────────
+  btnSearch.onclick = () => searching ? closeSearch() : openSearch();
+  btnStar.onclick   = togglePin;
+  btnDel.onclick    = deleteQuote;
+  btnAdd.onclick    = () => adding ? cancelAdd() : startAdd();
+  btnSave.onclick   = addQuote;
+  btnCancel.onclick = cancelAdd;
+  btnQuit.onclick   = () => window.api.quit();
+
+  btnPrev.onclick = () => {
+    if (searching) { if (searchIdx > 0) { searchIdx--; renderQuote(); } }
+    else { if (idx > 0) goTo(idx - 1); }
+  };
+  btnNext.onclick = () => {
+    const list = visibleList() || quotes;
+    const ci   = searching ? searchIdx : idx;
+    if (ci < list.length - 1) {
+      if (searching) { searchIdx++; renderQuote(); }
+      else goTo(idx + 1);
+    }
+  };
+
+  searchInput.oninput   = () => { searchQuery = searchInput.value; searchIdx = 0; renderQuote(); };
+  searchInput.onkeydown = (e) => { if (e.key === 'Escape') closeSearch(); };
+
+  ta.onkeydown = (e) => {
+    if (e.key === 'Escape') cancelAdd();
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) addQuote();
+  };
+  inpAuthor.onkeydown = (e) => {
+    if (e.key === 'Escape') cancelAdd();
+    if (e.key === 'Enter') addQuote();
+  };
+
+  // ── Init ────────────────────────────────────────────────────
+  window.api.load().then(data => {
+    quotes = Array.isArray(data) ? data : [];
+    idx = 0;
+    renderQuote();
+    renderSidebar();
+    startAuto();
+  });
+</script>
+</body>
+</html>
